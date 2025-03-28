@@ -1,0 +1,6 @@
+requests==2.28.1  # 必须添加在第一行
+steamship>=2.14.2
+translators>=5.5.6
+flask==2.0.1
+flask-cors==3.0.10
+python-dotenv==0.19.0

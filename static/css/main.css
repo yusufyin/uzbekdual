@@ -1,0 +1,39 @@
+:root {
+    --primary: #2c3e50;
+    --secondary: #3498db;
+}
+
+.search-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid var(--primary);
+    border-radius: 25px;
+    font-size: 16px;
+}
+
+.result-section {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+.source-header {
+    color: var(--secondary);
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.result-item {
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}

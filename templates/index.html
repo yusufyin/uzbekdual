@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能词典搜索</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --text: #333;
+            --bg: #f8f9fa;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        #searchContainer {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--primary);
+            border-radius: 2rem;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .source-header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .result-items {
+            padding: 1rem;
+        }
+
+        .result-item {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
+            background: var(--bg);
+            transition: transform 0.2s ease;
+        }
+
+        .result-item:hover {
+            transform: translateX(4px);
+        }
+
+        .local-word {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .local-definition {
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .remote-item {
+            color: var(--text);
+            padding: 0.8rem;
+            border-left: 3px solid var(--accent);
+        }
+
+        .error-message {
+            color: var(--accent);
+            padding: 1rem;
+            background: #fee;
+            border-radius: 0.5rem;
+            margin: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            #searchInput {
+                font-size: 1rem;
+                padding: 0.8rem;
+            }
+            
+            .result-item {
+                padding: 0.8rem;
+            }
+        }
+        .cached-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .collapsible {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            user-select: none;
+        }
+
+        .collapse-icon {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .result-section.collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .result-items {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .result-section.collapsed .result-items {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="searchContainer">
+        <input type="search" id="searchInput" placeholder="🔍 输入乌/英单词...">
+        <div id="resultPanel"></div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const resultPanel = document.getElementById('resultPanel');
+        const searchInput = document.getElementById('searchInput');
+        
+        // 防抖函数
+        const debounce = (func, delay = 500) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        };
+
+        // 展开/收起功能
+        window.toggleCollapse = function(button) {
+            const section = button.closest('.result-section');
+            const content = section.querySelector('.result-items');
+            
+            section.classList.toggle('collapsed');
+            
+            // 动态计算高度实现平滑动画
+            if (section.classList.contains('collapsed')) {
+                content.style.maxHeight = '0';
+            } else {
+                content.style.maxHeight = `${content.scrollHeight}px`;
+            }
+        };
+
+        // 渲染结果
+        const renderResults = ([remote, local]) => {
+            let html = '';
+            
+            if (remote.error) {
+                html += `<div class="error-message">在线查询错误: ${remote.error}</div>`;
+            } else {
+                html += `
+                <div class="result-section">
+                    <div class="source-header">
+                        <span class="collapsible" onclick="toggleCollapse(this)">
+                            在线词典结果
+                            ${remote.cached ? '<span class="cached-badge">本地缓存</span>' : ''}
+                            <span class="collapse-icon">▼</span>
+                        </span>
+                    </div>
+                    <div class="result-items">
+                        ${remote.data.map(w => `
+                            <div class="result-item remote-item">
+                                ${w.replace(/\n/g, '<br>')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }
+
+            html += `
+            <div class="result-section">
+                <div class="source-header">
+                    <span class="collapsible" onclick="toggleCollapse(this)">
+                        本地词库 (${local.data.length})
+                        ${local.cached ? '<span class="cached-badge">本地缓存</span>' : ''}
+                        <span class="collapse-icon">▼</span>
+                    </span>
+                </div>
+                <div class="result-items">
+                    ${local.data.map(item => `
+                        <div class="result-item">
+                            <div class="local-word">${item.word}</div>
+                            <div class="local-definition">${item.definition}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+
+            resultPanel.innerHTML = html;
+
+            // 初始化展开状态的高度
+            document.querySelectorAll('.result-section').forEach(section => {
+                if (!section.classList.contains('collapsed')) {
+                    const content = section.querySelector('.result-items');
+                    content.style.maxHeight = `${content.scrollHeight}px`;
+                }
+            });
+
+        };
+
+        // 搜索函数
+        const performSearch = async (term) => {
+            if (!term.trim()) {
+                resultPanel.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ term })
+                });
+                const data = await response.json();
+                renderResults(data);
+            } catch (error) {
+                resultPanel.innerHTML = `
+                    <div class="error-message">
+                        请求失败: ${error.message}
+                    </div>`;
+            }
+        };
+
+        // 绑定输入事件
+        searchInput.addEventListener('input', debounce((e) => {
+            performSearch(e.target.value.trim());
+        }));
+    </script>
+</body>
+</html>
