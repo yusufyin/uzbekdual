@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能词典搜索</title>
+    <title>Uzbek-Dual词典搜索-By Yusuf</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -156,7 +156,7 @@
 </head>
 <body>
     <div id="searchContainer">
-        <input type="search" id="searchInput" placeholder="🔍 输入乌/英单词...">
+        <input type="search" id="searchInput" placeholder="🔍 输入Uzbek单词...[Uzbek-Dual词典搜索-By Yusuf]">
         <div id="resultPanel"></div>
     </div>
 
@@ -201,7 +201,7 @@
                     <div class="source-header">
                         <span class="collapsible" onclick="toggleCollapse(this)">
                             在线词典结果
-                            ${remote.cached ? '<span class="cached-badge">本地缓存</span>' : ''}
+                            ${remote.cached ? '<span class="cached-badge">已缓存</span>' : ''}
                             <span class="collapse-icon">▼</span>
                         </span>
                     </div>
@@ -220,7 +220,7 @@
                 <div class="source-header">
                     <span class="collapsible" onclick="toggleCollapse(this)">
                         本地词库 (${local.data.length})
-                        ${local.cached ? '<span class="cached-badge">本地缓存</span>' : ''}
+                        ${local.cached ? '<span class="cached-badge">已缓存</span>' : ''}
                         <span class="collapse-icon">▼</span>
                     </span>
                 </div>
