@@ -116,10 +116,11 @@ def search():
         remote_data = [f"网络错误: {str(e)}"]
 
     # 本地搜索
+    search_term = term.lower()
     local_data = [
         {"word": k, "definition": v} 
         for k, v in LOCAL_LEXICON.items() 
-        if term.lower() in k.lower()
+        if k.lower().startswith(search_term)
     ]
     
     # 缓存结果
